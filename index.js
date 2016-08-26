@@ -1,5 +1,4 @@
-// npm install slackbots 
-
+require('dotenv').config()
 const SlackBot = require('slackbots')
 
 const directory = require('./directory')
@@ -8,6 +7,8 @@ try {
 } catch(e) {
   console.error(e)
 }
+
+const chief = require('./chief')
 
 const bot = new SlackBot({
   token: process.env.SLACK_TOKEN,
@@ -42,6 +43,9 @@ function getResponse(text) {
   } else if(text.indexOf('contact info') > -1 || text.indexOf('find') > -1 || text.indexOf('who is') > -1) {
     let name = text.replace(/get|contact|info|for|find|who|is/g, '').trim()
     return directory.lookup(name)
+  } else if(text.match(/chief/)) {
+    let category = text.replace(/chief|delphi|new|posts|in|section/g, '').trim()
+    return chief(category.length ? category : null)
   }
   return Promise.reject('No response')
 }

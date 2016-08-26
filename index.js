@@ -2,6 +2,13 @@
 
 const SlackBot = require('slackbots')
 
+const directory = require('./directory')
+try {
+  directory.init()
+} catch(e) {
+  console.error(e)
+}
+
 const bot = new SlackBot({
   token: process.env.SLACK_TOKEN,
   name: 'ligerbot'
@@ -29,11 +36,14 @@ function getChannelById(channelId) {
 }
 
 function getResponse(text) {
-  text = text.replace(asMention(bot.user.id), '').trim()
+  text = text.replace(asMention(bot.user.id), '').trim().toLowerCase()
   if(text.startsWith('say')) {
-    return text.substring(3).trim()
+    return Promise.resolve(text.substring(3).trim())
+  } else if(text.indexOf('contact info') > -1 || text.indexOf('find') > -1 || text.indexOf('who is') > -1) {
+    let name = text.replace(/get|contact|info|for|find|who|is/g, '').trim()
+    return directory.lookup(name)
   }
-  return false
+  return Promise.reject('No response')
 }
 
 bot.on('start', function() {
@@ -42,10 +52,9 @@ bot.on('start', function() {
   bot.on('message', function(data) {
     console.log(data)
     if(isChatMessage(data) && !isFromSelf(data) && isMentioning(data)) {
-      let response = getResponse(data.text)
-      if(response) {
+      getResponse(data.text).then(function(response) {
         bot.postMessage(data.channel, response, {as_user: true})
-      }
+      })
     }
   })
 })

@@ -11,6 +11,11 @@ function sanitize(str) {
   return str
 }
 
+function isSpam(str) {
+  str = str.toLowerCase()
+  return str.indexOf('live stream') > -1 && !str.match(/vex|frc|first|ftc/)
+}
+
 module.exports = function(category) {
   return new Promise(function(resolve, reject) {
     let req = request('http://chiefdelphi.com/forum/external.php')
@@ -60,9 +65,12 @@ module.exports = function(category) {
           if(!matches) continue
         }
         if(item.date > cachedLastDate) {
-          foundPosts = true
-          response += `*${item.title}* in *${item.categories.join(', ')}*\n${item.link}\n_${sanitize(item.summary)}_\n\n`
-          count++
+          let summary = sanitize(item.summary)
+          if(!isSpam(summary)) {
+            foundPosts = true
+            response += `*${item.title}* in *${item.categories.join(', ')}*\n${item.link}\n_${summary}_\n\n`
+            count++
+          }
         }
       }
     })
